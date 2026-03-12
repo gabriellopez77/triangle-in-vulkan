@@ -1,0 +1,21 @@
+{
+    "configurations": [
+        {
+            "compileCommands": "${workspaceFolder}/out/build/compile_commands.json",
+            "name": "Win32",
+            "includePath": [
+                "${default}",
+                "${workspaceFolder}/dependencies/glfw/include",
+                "${workspaceFolder}/dependencies/glm",
+                "C:/VulkanSDK/1.4.341.1/Include"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE",
+                "PROJECT_ROOT_PATH=\"\""
+            ]
+        }
+    ],
+    "version": 4
+}
