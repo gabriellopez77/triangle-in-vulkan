@@ -653,6 +653,7 @@ void VulkanApp::recordCommandBuffer(VkCommandBuffer commandBuffer, u32 imageInde
     scissor.extent = m_swapChainExtent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
+    vkCmdDraw(commandBuffer, 6, 1, 0, 0);
     vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
     vkCmdEndRenderPass(commandBuffer);
@@ -693,10 +694,10 @@ void VulkanApp::drawFrame() {
     recordCommandBuffer(m_commandBuffer, imageIndex);
 
 
-    constexpr VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphore };
-    constexpr VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphore };
-    constexpr VkSwapchainKHR swapChains[] = { m_swapChain };
-    constexpr VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    const VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphore };
+    const VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphore };
+    const VkSwapchainKHR swapChains[] = { m_swapChain };
+    const VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
