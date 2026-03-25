@@ -4,7 +4,8 @@
 
 #define SHADERS_FOLDER PROJECT_ROOT_PATH"/assets/shaders/compiled"
 
-namespace render::utils {
+
+namespace rk::utils {
     constexpr const char* validateLayerNames[] = {
         "VK_LAYER_KHRONOS_validation"
     };

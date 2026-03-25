@@ -11,10 +11,10 @@
 #include "PhysicalDevice.h"
 #include "RenderPass.h"
 #include "VulkanApp.h"
-#include "../defs.h"
+#include "defs.h"
 
 
-void render::SwapChain::create(const VulkanApp* app) {
+void rk::SwapChain::create(const VulkanApp* app) {
     auto swapChainSupport = querySwapChainSupport(app->physicalDevice.get());
 
     // choose the best settings for our swap chain
@@ -77,12 +77,12 @@ void render::SwapChain::create(const VulkanApp* app) {
     m_imagesCount = imageCount;
 }
 
-void render::SwapChain::createSurface(const VulkanApp* app, GLFWwindow* window) {
+void rk::SwapChain::createSurface(const VulkanApp* app, GLFWwindow* window) {
     if (glfwCreateWindowSurface(app->instance, window, nullptr, &m_surface) != VK_SUCCESS)
         assert(false && "failed to create window surface!");
 }
 
-VkSurfaceFormatKHR render::SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
+VkSurfaceFormatKHR rk::SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
     for (const auto& availableFormat : availableFormats) {
         if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
             return availableFormat;
@@ -93,7 +93,7 @@ VkSurfaceFormatKHR render::SwapChain::chooseSwapSurfaceFormat(const std::vector<
     return availableFormats[0];
 }
 
-VkPresentModeKHR render::SwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
+VkPresentModeKHR rk::SwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
     // try to choose VK_PRESENT_MODE_MAILBOX_KHR mode
     for (const auto& availablePresentMode : availablePresentModes) {
         if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
@@ -105,7 +105,7 @@ VkPresentModeKHR render::SwapChain::chooseSwapPresentMode(const std::vector<VkPr
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D render::SwapChain::chooseSwapExtent(GLFWwindow* window, const VkSurfaceCapabilitiesKHR& capabilities) {
+VkExtent2D rk::SwapChain::chooseSwapExtent(GLFWwindow* window, const VkSurfaceCapabilitiesKHR& capabilities) {
     if (capabilities.currentExtent.width != std::numeric_limits<u32>::max())
         return capabilities.currentExtent;
 
@@ -121,7 +121,7 @@ VkExtent2D render::SwapChain::chooseSwapExtent(GLFWwindow* window, const VkSurfa
     return actualExtent;
 }
 
-void render::SwapChain::createImageViews(const VulkanApp* app) {
+void rk::SwapChain::createImageViews(const VulkanApp* app) {
     for (size_t i = 0; i < m_images.size(); i++) {
         VkImageViewCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -143,7 +143,7 @@ void render::SwapChain::createImageViews(const VulkanApp* app) {
     }
 }
 
-render::SwapChain::SupportDetails render::SwapChain::querySwapChainSupport(VkPhysicalDevice device) const {
+rk::SwapChain::SupportDetails rk::SwapChain::querySwapChainSupport(VkPhysicalDevice device) const {
     SupportDetails details;
 
     // get physical device surface capabilities
@@ -171,7 +171,7 @@ render::SwapChain::SupportDetails render::SwapChain::querySwapChainSupport(VkPhy
     return details;
 }
 
-void render::SwapChain::createFramebuffers(const VulkanApp* app) {
+void rk::SwapChain::createFramebuffers(const VulkanApp* app) {
     for (int i = 0; i < m_imageViews.size(); i++) {
         VkImageView imageViews[] = { m_imageViews[i] };
 
@@ -189,18 +189,17 @@ void render::SwapChain::createFramebuffers(const VulkanApp* app) {
     }
 }
 
-u32 render::SwapChain::getOneImage(const VulkanApp* app, VkSemaphore semaphore) {
-    u32 imageIndex;
-    auto result = vkAcquireNextImageKHR(app->logicalDevice.get(), m_swapChain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &imageIndex);
+u32 rk::SwapChain::getOneImage(VkDevice device, VkSemaphore semaphore) {
+    auto result = vkAcquireNextImageKHR(device, m_swapChain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &m_currentImageIndex);
 
     if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR && result != VK_ERROR_OUT_OF_DATE_KHR) {
         assert(false && "failed to acquire swap chain image!");
     }
 
-    return imageIndex;
+    return m_currentImageIndex;
 }
 
-void render::SwapChain::clear(const VulkanApp* app) {
+void rk::SwapChain::clear(const VulkanApp* app) {
     for (int i = 0; i < m_imagesCount; i++) {
         vkDestroyFramebuffer(app->logicalDevice.get(), m_framebuffers[i], nullptr);
         vkDestroyImageView(app->logicalDevice.get(), m_imageViews[i], nullptr);
@@ -209,7 +208,7 @@ void render::SwapChain::clear(const VulkanApp* app) {
     vkDestroySwapchainKHR(app->logicalDevice.get(), m_swapChain, nullptr);
 }
 
-void render::SwapChain::recreate(const VulkanApp* app) {
+void rk::SwapChain::recreate(const VulkanApp* app) {
     clear(app);
 
     // avoid create a framebuffer with 0 as size
@@ -226,7 +225,7 @@ void render::SwapChain::recreate(const VulkanApp* app) {
     createFramebuffers(app);
 }
 
-void render::SwapChain::tryRecreate(const VulkanApp* app, VkResult result, const VkFence* fence) {
+void rk::SwapChain::tryRecreate(const VulkanApp* app, VkResult result, const VkFence* fence) {
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_resized) {
         // wait for command is finished
         vkWaitForFences(app->logicalDevice.get(), 1, fence, VK_TRUE, UINT64_MAX);

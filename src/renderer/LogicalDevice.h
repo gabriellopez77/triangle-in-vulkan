@@ -3,7 +3,7 @@
 #include "VulkanFwd.h"
 
 
-namespace render {
+namespace rk {
     // fwd
     class PhysicalDevice;
     class VulkanApp;
@@ -15,6 +15,7 @@ namespace render {
         VkDevice get() const { return m_logicalDevice; }
         VkQueue getGraphicsQueue() const { return m_graphicsQueue; }
         VkQueue getPresentQueue() const { return m_presentQueue; }
+        VkQueue getTransferQueue() const { return m_transferQueue; }
 
     private:
         VkDevice m_logicalDevice = nullptr;
@@ -22,5 +23,6 @@ namespace render {
         // queues
         VkQueue m_graphicsQueue = nullptr;
         VkQueue m_presentQueue = nullptr;
+        VkQueue m_transferQueue = nullptr;
     };
 }

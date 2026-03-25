@@ -1,11 +1,11 @@
 #pragma once
 
-#include "defs.h"
+#include "renderer/defs.h"
 
 
 // fwd
 struct GLFWwindow;
-namespace render {
+namespace rk {
     class VulkanApp;
 }
 
@@ -25,7 +25,7 @@ public:
 private:
     static void resizeCallback(GLFWwindow* window, i32 width, i32 height);
 
-    render::VulkanApp* m_vulkanApp = nullptr;
+    rk::VulkanApp* m_vulkanApp = nullptr;
 
     // functions pointers
     void (*m_loopFunc)(float dt) = nullptr;

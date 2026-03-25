@@ -6,7 +6,7 @@
 
 
 
-namespace render {
+namespace rk {
     //fwd
     class SwapChain;
     class RenderPass;
@@ -19,12 +19,13 @@ namespace render {
         void bind(VkCommandBuffer command) const;
 
         VkPipeline get() const { return m_graphicsPipeline; }
-        VkPipelineLayout pipelineLayout = nullptr;
+        VkPipelineLayout getLayout() const { return m_pipelineLayout; }
 
     private:
         std::vector<char> readShaderFile(const char* filePath) const;
         VkShaderModule createShaderModule(const char* path, VkDevice device) const;
 
+        VkPipelineLayout m_pipelineLayout = nullptr;
         VkPipeline m_graphicsPipeline = nullptr;
     };
 }

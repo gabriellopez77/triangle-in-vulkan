@@ -10,11 +10,11 @@
 #include "RenderPass.h"
 #include "SwapChain.h"
 #include "VulkanApp.h"
-#include "../defs.h"
+#include "defs.h"
 #include "PipelineSettings.h"
 
 
-void render::GraphicsPipeline::create(const VulkanApp* app, const PipelineSettings& settings) {
+void rk::GraphicsPipeline::create(const VulkanApp* app, const PipelineSettings& settings) {
     auto vertShaderModule = createShaderModule(settings.vertPath, app->logicalDevice.get());
     auto fragShaderModule = createShaderModule(settings.fragPath, app->logicalDevice.get());
 
@@ -106,10 +106,10 @@ void render::GraphicsPipeline::create(const VulkanApp* app, const PipelineSettin
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 0; // Optional
     pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
-    pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-    pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+    pipelineLayoutInfo.pushConstantRangeCount = settings.pushConstantsCount;
+    pipelineLayoutInfo.pPushConstantRanges = &settings.pushConstants->get();
 
-    if (vkCreatePipelineLayout(app->logicalDevice.get(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
+    if (vkCreatePipelineLayout(app->logicalDevice.get(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
         assert(false && "failed to create pipeline layout!");
 
     VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -124,7 +124,7 @@ void render::GraphicsPipeline::create(const VulkanApp* app, const PipelineSettin
     pipelineInfo.pDepthStencilState = nullptr; // Optional
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
-    pipelineInfo.layout = pipelineLayout;
+    pipelineInfo.layout = m_pipelineLayout;
     pipelineInfo.renderPass = app->renderPass.get();
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = nullptr; // Optional
@@ -138,11 +138,11 @@ void render::GraphicsPipeline::create(const VulkanApp* app, const PipelineSettin
     vkDestroyShaderModule(app->logicalDevice.get(), fragShaderModule, nullptr);
 }
 
-void render::GraphicsPipeline::bind(VkCommandBuffer command) const {
+void rk::GraphicsPipeline::bind(VkCommandBuffer command) const {
     vkCmdBindPipeline(command, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
 }
 
-std::vector<char> render::GraphicsPipeline::readShaderFile(const char* filePath) const {
+std::vector<char> rk::GraphicsPipeline::readShaderFile(const char* filePath) const {
     // open the file at the end to get the file size
     std::ifstream file(filePath, std::ios::ate | std::ios::binary);
 
@@ -163,7 +163,7 @@ std::vector<char> render::GraphicsPipeline::readShaderFile(const char* filePath)
     return buffer;
 }
 
-VkShaderModule render::GraphicsPipeline::createShaderModule(const char* path, VkDevice device) const {
+VkShaderModule rk::GraphicsPipeline::createShaderModule(const char* path, VkDevice device) const {
     auto code = readShaderFile(path);
 
     VkShaderModuleCreateInfo createInfo{};

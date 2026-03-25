@@ -7,7 +7,7 @@
 #include "VulkanApp.h"
 
 
-void render::RenderPass::create(const VulkanApp* app) {
+void rk::RenderPass::create(const VulkanApp* app) {
     // color attachment
     VkSubpassDependency dependency{};
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;

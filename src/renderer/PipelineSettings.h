@@ -1,22 +1,25 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
-
-#include "../defs.h"
+#include "defs.h"
 
 
-namespace render {
+namespace rk {
+    class PushConstants;
+
     struct PipelineSettings {
         const char* vertPath = nullptr;
         const char* fragPath = nullptr;
 
         u32 dynamicStatesCount = 0;
-        VkDynamicState* dynamicStates = nullptr;
+        const VkDynamicState* dynamicStates = nullptr;
 
         u32 bindingsCount = 0;
-        VkVertexInputBindingDescription* bindings = nullptr;
+        const VkVertexInputBindingDescription* bindings = nullptr;
 
         u32 attributesCount = 0;
-        VkVertexInputAttributeDescription* attributes = nullptr;
+        const VkVertexInputAttributeDescription* attributes = nullptr;
+
+        u32 pushConstantsCount = 0;
+        const PushConstants* pushConstants = nullptr;
     };
 }

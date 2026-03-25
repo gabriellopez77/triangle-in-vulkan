@@ -3,44 +3,19 @@
 #include <optional>
 #include <vector>
 
-#include "VulkanFwd.h"
-#include "../defs.h"
+#include "defs.h"
 #include "PhysicalDevice.h"
 #include "SwapChain.h"
 #include "RenderPass.h"
 #include "GraphicsPipeline.h"
 #include "LogicalDevice.h"
 #include "VertexBuffer.h"
-
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
-
+#include "PushConstants.h"
 
 // fwd
 struct GLFWwindow;
 
-struct Vertex {
-    glm::vec2 pos;
-    glm::vec3 color;
-
-    static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions() {
-        std::array<VkVertexInputAttributeDescription, 2> attributes;
-
-        attributes[0].location = 0;
-        attributes[0].binding = 0;
-        attributes[0].format = VK_FORMAT_R32G32_SFLOAT;
-        attributes[0].offset = offsetof(Vertex, pos);
-
-        attributes[1].location = 1;
-        attributes[1].binding = 0;
-        attributes[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributes[1].offset = offsetof(Vertex, color);
-
-        return attributes;
-    }
-};
-
-namespace render {
+namespace rk {
     class VulkanApp {
     public:
         static constexpr bool VALIDATION_LAYERS_ENABLED = true;
@@ -48,40 +23,44 @@ namespace render {
         struct QueueFamilyIndices {
             std::optional<u32> graphicsFamily;
             std::optional<u32> presentFamily;
+            std::optional<u32> transferFamily;
 
             bool isComplete() const {
-                return graphicsFamily.has_value() && presentFamily.has_value();
+                return graphicsFamily.has_value() && presentFamily.has_value() && transferFamily.has_value();
             }
         };
 
         void init(GLFWwindow* window);
         void clear();
         void resize();
-
         void drawFrame();
-        QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) const;
+
+        void beginFrame();
+        void endFrame();
+
+        VkCommandPool getCommandPool() const { return m_commandPool; };
+        QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, const std::vector<VkQueueFamilyProperties>* queues = nullptr) const;
 
         GLFWwindow* window = nullptr;
+        PushConstants pushConstants;
         PhysicalDevice physicalDevice;
         SwapChain swapChain;
         RenderPass renderPass;
         GraphicsPipeline graphicsPipeline1;
-        //GraphicsPipeline graphicsPipeline2;
         LogicalDevice logicalDevice;
+
 
         VkInstance instance = nullptr;
 
-        render::VertexBuffer vertexBuffer;
+        VertexBuffer vertexBuffer;
     private:
         void createInstance();
         void createCommandPool();
         void createCommandBuffers();
         void createSyncObjects();
 
-
-        void recordCommandBuffer(u32 imageIndex) const;
-
         u32 m_currentFrame = 0;
+        u32 m_currentImageIndex = 0;
 
         // commands
         VkCommandPool m_commandPool = nullptr;

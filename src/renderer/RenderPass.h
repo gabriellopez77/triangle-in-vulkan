@@ -2,7 +2,8 @@
 
 #include "VulkanFwd.h"
 
-namespace render {
+
+namespace rk {
     //fwd
     class VulkanApp;
 

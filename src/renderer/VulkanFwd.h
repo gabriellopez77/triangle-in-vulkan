@@ -21,4 +21,6 @@ typedef struct VkBuffer_T *VkBuffer;
 typedef struct VkDeviceMemory_T *VkDeviceMemory;
 typedef VkVertexInputBindingDescription VkVertexInputBindingDescription;
 typedef VkVertexInputAttributeDescription VkVertexInputAttributeDescription;
+//typedef struct VkPushConstantRange VkPushConstantRange;
 
+//typedef VkPhysicalDeviceProperties VkPhysicalDeviceProperties

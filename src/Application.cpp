@@ -27,7 +27,7 @@ void Application::initVulkan() {
     if (m_vulkanApp)
         assert(false && "Vulkan app already initialized!");
 
-    m_vulkanApp = new render::VulkanApp();
+    m_vulkanApp = new rk::VulkanApp();
     m_vulkanApp->init(m_window);
 }
 
@@ -54,7 +54,9 @@ void Application::run() {
             m_loopFunc(DeltaTime);
         }
 
+        m_vulkanApp->beginFrame();
         m_vulkanApp->drawFrame();
+        m_vulkanApp->endFrame();
     }
 }
 

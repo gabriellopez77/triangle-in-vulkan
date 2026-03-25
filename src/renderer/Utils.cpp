@@ -1,12 +1,12 @@
 #include "Utils.h"
 
 #include "VulkanApp.h"
-#include "../defs.h"
+#include "defs.h"
 
 #include <glfw/glfw3.h>
 
 
-namespace render::utils {
+namespace rk::utils {
     std::vector<const char*> getRequiredInstanceExtensions() {
         std::vector<const char*> extensions;
 
