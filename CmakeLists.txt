@@ -17,7 +17,7 @@ find_package(Vulkan REQUIRED)
 # subdirectories
 add_subdirectory("dependencies/glfw") # add glfw as a subdirectory
 add_subdirectory("dependencies/glm") # add glm as a subdirectory
-add_subdirectory("dependencies/nlohmann")
+#add_subdirectory("dependencies/nlohmann")
 
 add_executable(${PROJECT_NAME}) # create executable with project name
 
@@ -42,8 +42,17 @@ target_link_libraries(${PROJECT_NAME}
         Vulkan::Vulkan
         glm
         stb
-        nlohmann_json::nlohmann_json
+        #nlohmann_json::nlohmann_json
 ) # link libraries to executable
 
 # macros
 target_compile_definitions(${PROJECT_NAME} PUBLIC PROJECT_ROOT_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
+
+# compile options
+if (MSVC)
+	target_compile_options(${PROJECT_NAME} PRIVATE
+	/W3 # warnings W3
+	/MP # multithreading build
+	/arch:AVX2 # SIMD optimization
+	)
+endif()

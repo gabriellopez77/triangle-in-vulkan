@@ -2,25 +2,26 @@
 
 #include <iostream>
 
-#include <glm/vec3.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
 #include "Application.h"
 #include "Inputs.h"
-#include "glm/fwd.hpp"
+
 #include "render/PipelineSettings.h"
 #include "render/core/VulkanApp.h"
 #include "render/VulkanEnums.h"
 
+#include "resources/ArrayBuffer.h"
+#include "resources/TextureManager.h"
+
+#include "math/Vec2.h"
 
 struct VertexData {
-    glm::vec2 vertices;
-    glm::vec2 texCoords;
+    Vec2 vertices;
+    Vec2 texCoords;
 };
 
 struct InstanceData {
-    glm::vec3 position;
-    glm::vec2 size;
+    Vec3 position;
+    Vec2 size;
 };
 
 constexpr VertexData vertices[] = {
@@ -34,16 +35,25 @@ constexpr u32 indices[] = {
     0, 1, 2, 2, 3, 0
 };
 
+//i32 uboIndex = 0;
+i32 dynamicUboIndex = 0;
+i32 dynamicUboOffsetIndex = 0;
+
 constexpr int INSTANCE_COUNT = 5;
 
 void Game::start(Application* application) {
     m_application = application;
 
-    ubo.create(128);
-    texture1.create(PROJECT_ROOT_PATH"/assets/textures/brick.png", rk::SamplerFilter::NEAREST, rk::SamplerMode::REPEAT);
+    resources::textueManager::start();
 
-    descriptorSet.addUbo(ubo, 0, rk::ShaderStage::VERTEX);
-    descriptorSet.addSampler(texture1, 1, rk::ShaderStage::FRAGMENT);
+    auto tex = resources::textueManager::get("sla");
+
+    //uboIndex = descriptorSet.addUbo(128, 0, rk::ShaderStage::VERTEX);
+    descriptorSet.addSampler(tex, 1, rk::ShaderStage::FRAGMENT);
+    dynamicUboIndex = descriptorSet.addDynamicUbo();
+    dynamicUboOffsetIndex = descriptorSet.addDynamicUboOffset(128);
+    descriptorSet.createDynamicUbo(0, rk::ShaderStage::VERTEX);
+
     descriptorSet.create();
 
     rk::PipelineSettings pipelineSettings;
@@ -85,36 +95,32 @@ void Game::update(float dt) {
 }
 
 void Game::render() {
-    auto command = rk::VulkanApp::get()->getCurrentCommandBuffer();
+    auto command = rk::vulkanApp::getCurrentCommandBuffer();
 
     pipeline.bind(command);
     vertexBuffer1.bind(command, 0);
     vertexBuffer2.bind(command, 1);
     descriptorSet.bind(command, pipeline.getLayout());
 
-    auto proj = player.camera.getProjectionMatrix();
-    auto view =player.camera.getViewMatrix();
+    const auto& proj = player.camera.getProjectionMatrix();
+    const auto& view = player.camera.getViewMatrix();
 
-    ubo.updateSingle(0, 64, &proj);
-    ubo.updateSingle(64, 64, &view);
+    descriptorSet.enableDynamicUboOffset(dynamicUboIndex, dynamicUboOffsetIndex);
+    descriptorSet.updateDynamicUbo(dynamicUboIndex, dynamicUboOffsetIndex, 0, 64, &proj);
+    descriptorSet.updateDynamicUbo(dynamicUboIndex, dynamicUboOffsetIndex, 64, 64, &view);
 
     Matrix4 model(1.f);
     model.rotate(Application::Time * 25.f, {1.f, 0.f, 0.f});
     model.translate({0, 0, -1});
     model.scale({100, 100, 100});
 
-    glm::mat4 model2(1.f);
-    model2 = glm::rotate(model2, glm::radians(Application::Time * 25.f), glm::vec3(1.f, 0.f, 0.f));
-    model2 = glm::translate(model2, glm::vec3(0.f, 0.f, 1));
-    model2 = glm::scale(model2, glm::vec3(100.f, 100.f, 100.f));
-
     pipeline.bindPushConstant(command, 64, &model);
     vkCmdDrawIndexed(command, std::size(indices), INSTANCE_COUNT, 0, 0, 0);
 
     model = Matrix4(1.f);
-
     model.translate(Vec3(0.f, 0.f, 1));
     model.scale(Vec3(10.f, 10.f, 10.f));
+
     pipeline.bindPushConstant(command, 64, &model);
     vkCmdDrawIndexed(command, std::size(indices), INSTANCE_COUNT, 0, 0, 0);
 

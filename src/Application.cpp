@@ -32,7 +32,7 @@ void Application::initWindow(i32 width, i32 height, const char* title) {
 }
 
 void Application::clear() {
-    rk::VulkanApp::get()->clear();
+    rk::vulkanApp::clear();
 }
 
 void Application::run(Game* game) {
@@ -43,7 +43,7 @@ void Application::run(Game* game) {
     m_game = game;
 
     // init vulkan
-    rk::VulkanApp::init(this);
+    rk::vulkanApp::init(this);
 
     // init game
     game->start(this);
@@ -65,12 +65,12 @@ void Application::run(Game* game) {
         // run game loop
         game->update(DeltaTime);
 
-        rk::VulkanApp::get()->beginFrame();
+        rk::vulkanApp::beginFrame();
 
         // run game render
         game->render();
 
-        rk::VulkanApp::get()->endFrame();
+        rk::vulkanApp::endFrame();
     }
 }
 
@@ -85,7 +85,7 @@ void Application::getFrameBufferSize(i32* width, i32* height) const {
 void Application::resizeCallback(GLFWwindow* window, i32 width, i32 height) {
     auto app = static_cast<Application*>(glfwGetWindowUserPointer(window));
 
-    rk::VulkanApp::get()->resize();
+    rk::vulkanApp::resize();
 
     app->m_game->resize(width, height);
 

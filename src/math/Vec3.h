@@ -5,19 +5,19 @@
 
 class Vec3 {
 public:
-    Vec3() {
+    constexpr Vec3() {
         x = 0.f;
         y = 0.f;
         z = 0.f;
     }
 
-    Vec3(f32 value) {
+    constexpr Vec3(f32 value) {
         x = value;
         y = value;
         z = value;
     }
 
-    Vec3(f32 x, f32 y, f32 z) {
+    constexpr Vec3(f32 x, f32 y, f32 z) {
         this->x = x;
         this->y = y;
         this->z = z;

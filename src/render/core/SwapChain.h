@@ -5,8 +5,6 @@
 
 namespace rk {
     // fwd
-    class VulkanApp;
-    class RenderPass;
     enum class Formats : i32;
 
     class SwapChain {
@@ -15,10 +13,10 @@ namespace rk {
 
         static bool isAdequate(VkPhysicalDevice PhysicalDevice, VkSurfaceKHR surface);
 
-        void create(const VulkanApp* app);
-        void clear(const VulkanApp* app) const;
-        void createFramebuffers(const VulkanApp* app);
-        void recreate(const VulkanApp* app, VkFence fence, i32 width, i32 height);
+        void create();
+        void clear() const;
+        void createFramebuffers();
+        void recreate(VkFence fence, i32 width, i32 height);
 
         u32 getWidth() const { return m_screenSize.width; }
         u32 getHeight() const { return m_screenSize.height; }

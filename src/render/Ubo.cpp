@@ -10,7 +10,7 @@
 
 
 void rk::Ubo::create(u64 size) {
-    auto logicalDevice = VulkanApp::get()->getLogicalDevice();
+    auto logicalDevice = vulkanApp::getLogicalDevice();
 
     for (size_t i = 0; i < utl::FRAMES_COUNT; i++) {
         utl::createBuffer(size, m_buffers[i], m_buffersMemory[i], BufferUsage::UNIFORM_BUFFER,
@@ -22,10 +22,10 @@ void rk::Ubo::create(u64 size) {
     m_size = size;
 }
 
-void rk::Ubo::updateSingle(u64 offset, u64 size, const void* data) const {
+void rk::Ubo::update(u64 offset, u64 size, const void* data) const {
     assert(size <= m_size);
 
-    std::memcpy(static_cast<char*>(m_buffersMapped[VulkanApp::currentFrame()]) + offset, data, size);
+    std::memcpy(static_cast<char*>(m_buffersMapped[vulkanApp::getCurrentFrame()]) + offset, data, size);
 }
 
 void rk::Ubo::updateAll(u64 offset, u64 size, const void* data) const {
@@ -36,7 +36,7 @@ void rk::Ubo::updateAll(u64 offset, u64 size, const void* data) const {
 }
 
 void rk::Ubo::destroy() const {
-    auto logicalDevice = VulkanApp::get()->getLogicalDevice();
+    auto logicalDevice = vulkanApp::getLogicalDevice();
 
     for (int i = 0; i < utl::FRAMES_COUNT; i++) {
         vkUnmapMemory(logicalDevice, m_buffersMemory[i]);

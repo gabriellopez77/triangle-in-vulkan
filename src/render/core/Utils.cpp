@@ -12,7 +12,7 @@
 namespace rk::utl {
     u32 findMemoryType(u32 type, MemoryType memoryType) {
         VkPhysicalDeviceMemoryProperties memProperties;
-        vkGetPhysicalDeviceMemoryProperties(VulkanApp::get()->getPhysicalDevice(), &memProperties);
+        vkGetPhysicalDeviceMemoryProperties(vulkanApp::getPhysicalDevice(), &memProperties);
 
         for (u32 i = 0; i < memProperties.memoryTypeCount; i++) {
             if (type & (1 << i) && (memProperties.memoryTypes[i].propertyFlags & (u32)memoryType) == (u32)memoryType) {
@@ -21,10 +21,12 @@ namespace rk::utl {
         }
 
         assert(false && "failed to find suitable memory type!");
+
+        return UINT32_MAX;
     }
 
     void copyDataToStagingBuffer(u64 size, VkDeviceMemory memoryType, const void* data) {
-        auto logicalDevice = VulkanApp::get()->getLogicalDevice();
+        auto logicalDevice = vulkanApp::getLogicalDevice();
 
         void* dataPtr;
         vkMapMemory(logicalDevice, memoryType, 0, size, 0, &dataPtr);
@@ -33,7 +35,7 @@ namespace rk::utl {
     }
 
     void createBuffer(u64 size, VkBuffer& buffer, VkDeviceMemory& memory, BufferUsage usage, MemoryType memoryType) {
-        auto logicalDevice = VulkanApp::get()->getLogicalDevice();
+        auto logicalDevice = vulkanApp::getLogicalDevice();
 
         VkBufferCreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -74,7 +76,7 @@ namespace rk::utl {
 
     void createImage(u32 width, u32 height, VkImage& image, VkDeviceMemory& memory, Formats format,
         MemoryType memoryType, ImageUsage usageFlags) {
-        auto logicalDevice = VulkanApp::get()->getLogicalDevice();
+        auto logicalDevice = vulkanApp::getLogicalDevice();
 
         VkImageCreateInfo imageInfo{};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -115,10 +117,10 @@ namespace rk::utl {
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         allocInfo.commandBufferCount = 1;
-        allocInfo.commandPool = VulkanApp::get()->getTransferCommandPool();
+        allocInfo.commandPool = vulkanApp::getTransferCommandPool();
 
         VkCommandBuffer commandBuffer;
-        vkAllocateCommandBuffers(VulkanApp::get()->getLogicalDevice(), &allocInfo, &commandBuffer);
+        vkAllocateCommandBuffers(vulkanApp::getLogicalDevice(), &allocInfo, &commandBuffer);
 
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -137,10 +139,10 @@ namespace rk::utl {
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &command;
 
-        vkQueueSubmit(VulkanApp::get()->getTransferQueue(), 1, &submitInfo, nullptr);
-        vkQueueWaitIdle(VulkanApp::get()->getTransferQueue());
+        vkQueueSubmit(vulkanApp::getTransferQueue(), 1, &submitInfo, nullptr);
+        vkQueueWaitIdle(vulkanApp::getTransferQueue());
 
-        vkFreeCommandBuffers(VulkanApp::get()->getLogicalDevice(), VulkanApp::get()->getTransferCommandPool(), 1, &command);
+        vkFreeCommandBuffers(vulkanApp::getLogicalDevice(), vulkanApp::getTransferCommandPool(), 1, &command);
     }
 
     void transitionImageLayout(VkImage image, Formats format, ImageLayout oldLayout, ImageLayout newLayout) {
@@ -222,7 +224,7 @@ namespace rk::utl {
         createInfo.subresourceRange.layerCount = 1;
 
         VkImageView imageView;
-        if (vkCreateImageView(VulkanApp::get()->getLogicalDevice(), &createInfo, nullptr, &imageView) != VK_SUCCESS)
+        if (vkCreateImageView(vulkanApp::getLogicalDevice(), &createInfo, nullptr, &imageView) != VK_SUCCESS)
             assert(false && "failed to create image views!");
 
         return imageView;

@@ -9,6 +9,7 @@
 #include "core/Utils.h"
 #include "core/VulkanApp.h"
 #include "VulkanEnums.h"
+#include "resources/TextureAtlas.h"
 
 
 void rk::Texture::create(const char* texturePath, SamplerFilter filter, SamplerMode mode) {
@@ -18,6 +19,17 @@ void rk::Texture::create(const char* texturePath, SamplerFilter filter, SamplerM
     if (!imageData)
         assert(false && "failed to load texture image");
 
+    create(imageData, width, height, filter, mode);
+
+    // free data in ram
+    stbi_image_free(imageData);
+}
+
+void rk::Texture::create(const resources::TextureAtlas& textureAtlas, SamplerFilter filter, SamplerMode mode) {
+    create(textureAtlas.data(), textureAtlas.width(), textureAtlas.height(), filter, mode);
+}
+
+void rk::Texture::create(const void* data, i32  width, i32 height, SamplerFilter filter, SamplerMode mode) {
     u64 imageSize = width * height * 4;
 
     VkBuffer stagingBuffer;
@@ -26,10 +38,9 @@ void rk::Texture::create(const char* texturePath, SamplerFilter filter, SamplerM
     utl::createBuffer(imageSize, stagingBuffer, stagingBufferMemory, BufferUsage::TRANSFER_SRC,
         MemoryType::HOST_VISIBLE | MemoryType::HOST_COHERENT);
 
-    utl::copyDataToStagingBuffer(imageSize, stagingBufferMemory, imageData);
+    utl::copyDataToStagingBuffer(imageSize, stagingBufferMemory, data);
 
-    // free data in ram
-    stbi_image_free(imageData);
+
 
     utl::createImage(width, height, m_image, m_imageMemory, Formats::RGBA8_SRGB, MemoryType::DEVICE_LOCAL,
         ImageUsage::TRANSFER_DST | ImageUsage::SAMPLED);
@@ -44,12 +55,12 @@ void rk::Texture::create(const char* texturePath, SamplerFilter filter, SamplerM
     createSampler(filter, mode);
 
     // clear buffer and memory staging
-    vkDestroyBuffer(VulkanApp::get()->getLogicalDevice(), stagingBuffer, nullptr);
-    vkFreeMemory(VulkanApp::get()->getLogicalDevice(), stagingBufferMemory, nullptr);
+    vkDestroyBuffer(vulkanApp::getLogicalDevice(), stagingBuffer, nullptr);
+    vkFreeMemory(vulkanApp::getLogicalDevice(), stagingBufferMemory, nullptr);
 }
 
 void rk::Texture::destroy() const {
-    auto logicalDevice = VulkanApp::get()->getLogicalDevice();
+    auto logicalDevice = vulkanApp::getLogicalDevice();
 
     vkDestroySampler(logicalDevice, m_sampler, nullptr);
     vkDestroyImageView(logicalDevice, m_imageView, nullptr);
@@ -76,6 +87,6 @@ void rk::Texture::createSampler(SamplerFilter filter, SamplerMode mode) {
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
 
-    if (vkCreateSampler(VulkanApp::get()->getLogicalDevice(), &samplerInfo, nullptr, &m_sampler) != VK_SUCCESS)
+    if (vkCreateSampler(vulkanApp::getLogicalDevice(), &samplerInfo, nullptr, &m_sampler) != VK_SUCCESS)
         assert(false && "failed to create texture sampler!");
 }

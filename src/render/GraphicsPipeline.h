@@ -8,8 +8,6 @@
 namespace rk {
     //fwd
     class SwapChain;
-    class RenderPass;
-    class VulkanApp;
     class PipelineSettings;
     enum class ShaderStage : i32;
 

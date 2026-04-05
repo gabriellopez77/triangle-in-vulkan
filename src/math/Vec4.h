@@ -5,21 +5,21 @@
 
 class Vec4 {
 public:
-    Vec4() {
+    constexpr Vec4() {
         x = 0.f;
         y = 0.f;
         z = 0.f;
         w = 0.f;
     }
 
-    Vec4(f32 value) {
+    constexpr Vec4(f32 value) {
         x = value;
         y = value;
         z = value;
         w = value;
     }
 
-    Vec4(f32 x, f32 y, f32 z, f32 w) {
+    constexpr Vec4(f32 x, f32 y, f32 z, f32 w) {
         this->x = x;
         this->y = y;
         this->z = z;

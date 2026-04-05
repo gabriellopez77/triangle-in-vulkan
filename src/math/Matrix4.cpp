@@ -1,9 +1,6 @@
 #include "Matrix4.h"
 
-#include <cmath>
-
-#include <glm/gtc/matrix_transform.hpp>
-
+#include "Math.h"
 #include "Vec3.h"
 
 
@@ -47,7 +44,7 @@ Matrix4 Matrix4::orthographic(float left, float right, float bottom, float top, 
 }
 
 Matrix4 Matrix4::perspective(float fov, float aspect, float near, float far) {
-    const float tanHalfFov = std::tan(fov / 2.f);
+    const float tanHalfFov = math::tan(fov / 2.f);
 
     Matrix4 result(0.f);
     result[0].x = 1.f / (aspect * tanHalfFov);
@@ -78,9 +75,9 @@ void Matrix4::scale(const Vec3& scale) {
 }
 
 void Matrix4::rotate(float angle, const Vec3& v) {
-    const float a = glm::radians(angle);
-    const float c = glm::cos(a);
-    const float s = glm::sin(a);
+    const float a = math::radians(angle);
+    const float c = math::cos(a);
+    const float s = math::sin(a);
 
     const Vec3 axis = Vec3::normalize(v);
     const Vec3 temp(axis * (1 - c));

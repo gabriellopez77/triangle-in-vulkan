@@ -1,10 +1,7 @@
 #include "Camera.h"
 
 #include "Inputs.h"
-#include <glm/trigonometric.hpp>
 
-#include "glm/ext/matrix_clip_space.hpp"
-#include "glm/ext/matrix_transform.hpp"
 #include "math/Math.h"
 
 
@@ -17,7 +14,7 @@ void Camera::update(Vec3 position) {
 }
 
 void Camera::resize(float width, float height) {
-    m_projection = Matrix4::perspective(glm::radians(70.f), width / height, 0.1f, 1000.f);
+    m_projection = Matrix4::perspective(math::radians(70.f), width / height, 0.1f, 1000.f);
 }
 
 void Camera::processRotation() {
@@ -32,9 +29,9 @@ void Camera::processRotation() {
     m_rotY = math::clamp(m_rotY, -89.f, 89.f);
 
     const Vec3 direction = {
-        glm::cos(math::radians(m_rotX)) * glm::cos(math::radians(m_rotY)),
-        glm::sin(math::radians(m_rotY)),
-        glm::sin(math::radians(m_rotX)) * glm::cos(math::radians(m_rotY))
+        math::cos(math::radians(m_rotX)) * math::cos(math::radians(m_rotY)),
+        math::sin(math::radians(m_rotY)),
+        math::sin(math::radians(m_rotX)) * math::cos(math::radians(m_rotY))
     };
 
     m_direction = direction.normalized();

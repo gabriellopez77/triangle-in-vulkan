@@ -17,7 +17,7 @@ void rk::GraphicsPipeline::create(const PipelineSettings& settings) {
     m_usePushConstant = settings.pushConstantRange != nullptr;
     m_pushConstantShaderStage = (ShaderStage)settings.pushConstantRange->stageFlags;
 
-    auto logicalDevice = VulkanApp::get()->getLogicalDevice();
+    auto logicalDevice = vulkanApp::getLogicalDevice();
 
     auto vertShaderModule = createShaderModule(settings.vertPath, logicalDevice);
     auto fragShaderModule = createShaderModule(settings.fragPath, logicalDevice);
@@ -136,7 +136,7 @@ void rk::GraphicsPipeline::create(const PipelineSettings& settings) {
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.layout = m_pipelineLayout;
-    pipelineInfo.renderPass = VulkanApp::get()->getRenderPass();
+    pipelineInfo.renderPass = vulkanApp::getRenderPass();
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = nullptr; // Optional
     pipelineInfo.basePipelineIndex = -1; // Optional
@@ -165,7 +165,7 @@ VkShaderModule createShaderModule(const char* path, VkDevice device) {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = code.size();
-    createInfo.pCode = reinterpret_cast<const u32*>(code.data());
+    createInfo.pCode = reinterpret_cast<u32*>(code.data());
 
     VkShaderModule shaderModule;
     if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
@@ -184,7 +184,7 @@ std::vector<char> readShaderFile(const char* filePath) {
 
     // get file size and allocate a buffer for it
     u64 fileSize = file.tellg();
-    std::vector<char> buffer(fileSize);
+    std::vector<i8> buffer(fileSize);
 
     // set the file position to the beginning and read the file into the buffer
     file.seekg(0);

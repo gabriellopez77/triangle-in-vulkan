@@ -11,6 +11,7 @@
 
 #include "math/Math.h"
 
+
 struct SupportDetails {
     VkSurfaceCapabilitiesKHR capabilities{};
     std::vector<VkSurfaceFormatKHR> formats;
@@ -22,17 +23,16 @@ VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& avai
 VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 SupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
 
+
 bool rk::SwapChain::isAdequate(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface) {
     auto swapChainSupport = querySwapChainSupport(physicalDevice, surface);
     return !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 }
 
+void rk::SwapChain::create() {
+    auto logicalDevice = vulkanApp::getLogicalDevice();
 
-
-void rk::SwapChain::create(const VulkanApp* app) {
-    auto logicalDevice = VulkanApp::get()->getLogicalDevice();
-
-    auto swapChainSupport = querySwapChainSupport(app->getPhysicalDevice(), m_surface);
+    auto swapChainSupport = querySwapChainSupport(vulkanApp::getPhysicalDevice(), m_surface);
 
     // choose the best settings for our swap chain
     auto surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
@@ -53,10 +53,10 @@ void rk::SwapChain::create(const VulkanApp* app) {
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    auto indices = app->findQueueFamilies();
-    u32 queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+    auto indices = vulkanApp::findQueueFamilies();
+    u32 queueFamilyIndices[] = { indices.graphics.value(), indices.present.value() };
 
-    if (indices.graphicsFamily != indices.presentFamily) {
+    if (indices.graphics != indices.present) {
         createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
         createInfo.queueFamilyIndexCount = 2;
         createInfo.pQueueFamilyIndices = queueFamilyIndices;
@@ -98,20 +98,20 @@ void rk::SwapChain::createImageViews() {
         m_imageViews[i] = utl::createImageView(m_images[i], m_imagesFormat, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
-void rk::SwapChain::createFramebuffers(const VulkanApp* app) {
+void rk::SwapChain::createFramebuffers() {
     for (int i = 0; i < utl::FRAMES_COUNT; i++) {
         VkImageView attachments[] = { m_imageViews[i], m_depthImageView };
 
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = app->getRenderPass();
+        framebufferInfo.renderPass = vulkanApp::getRenderPass();
         framebufferInfo.attachmentCount = std::size(attachments);
-        framebufferInfo.pAttachments = attachments ;
+        framebufferInfo.pAttachments = attachments;
         framebufferInfo.width = m_screenSize.width;
         framebufferInfo.height = m_screenSize.height;
         framebufferInfo.layers = 1;
 
-        if (vkCreateFramebuffer(app->getLogicalDevice(), &framebufferInfo, nullptr, &m_framebuffers[i]))
+        if (vkCreateFramebuffer(vulkanApp::getLogicalDevice(), &framebufferInfo, nullptr, &m_framebuffers[i]))
             assert(false && "failed to create framebuffer!");
     }
 }
@@ -153,8 +153,8 @@ u32 rk::SwapChain::getOneImage(VkDevice device, VkSemaphore semaphore) {
     return m_currentImageIndex;
 }
 
-void rk::SwapChain::clear(const VulkanApp* app) const {
-    auto logicalDevice = app->getLogicalDevice();
+void rk::SwapChain::clear() const {
+    auto logicalDevice = rk::vulkanApp::getLogicalDevice();
 
     for (int i = 0; i < utl::FRAMES_COUNT; i++) {
         vkDestroyFramebuffer(logicalDevice, m_framebuffers[i], nullptr);
@@ -169,16 +169,16 @@ void rk::SwapChain::clear(const VulkanApp* app) const {
     vkDestroySwapchainKHR(logicalDevice, m_swapChain, nullptr);
 }
 
-void rk::SwapChain::recreate(const VulkanApp* app, VkFence fence, i32 width, i32 height) {
+void rk::SwapChain::recreate(VkFence fence, i32 width, i32 height) {
     // wait for command is finished
-    vkWaitForFences(app->getLogicalDevice(), 1, &fence, VK_TRUE, UINT64_MAX);
+    vkWaitForFences(vulkanApp::getLogicalDevice(), 1, &fence, VK_TRUE, UINT64_MAX);
 
     // destroy the old swapChain
-    clear(app);
+    clear();
 
     // create a new swapChain
-    create(app);
-    createFramebuffers(app);
+    create();
+    createFramebuffers();
 }
 
 VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
@@ -210,7 +210,7 @@ VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
         return capabilities.currentExtent;
 
     int width, height;
-    rk::VulkanApp::get()->application->getFrameBufferSize(&width, &height);
+    rk::vulkanApp::application->getFrameBufferSize(&width, &height);
 
     VkExtent2D actualExtent = { (u32)width, (u32)height };
 

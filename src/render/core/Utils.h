@@ -8,7 +8,6 @@
 
 namespace rk {
     // fwd
-    class VulkanApp;
     enum class BufferUsage : u32;
     enum class MemoryType : u32;
     enum class Formats : i32;

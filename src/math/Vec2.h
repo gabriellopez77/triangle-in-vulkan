@@ -5,17 +5,17 @@
 
 class Vec2 {
 public:
-    Vec2() {
+    constexpr Vec2() {
         x = 0.f;
         y = 0.f;
     }
 
-    Vec2(f32 value) {
+    constexpr Vec2(f32 value) {
         x = value;
         y = value;
     }
 
-    Vec2(f32 x, f32 y) {
+    constexpr Vec2(f32 x, f32 y) {
         this->x = x;
         this->y = y;
     }

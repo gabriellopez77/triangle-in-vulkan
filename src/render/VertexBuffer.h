@@ -6,9 +6,6 @@
 
 
 namespace rk {
-    //fwd
-    class VulkanApp;
-
     class VertexBuffer {
     public:
         void create(u64 verticesSize,const void* verticesData);

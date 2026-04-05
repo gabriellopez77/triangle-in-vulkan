@@ -1,6 +1,6 @@
 #pragma once
 
-using i8 = signed char;
+using i8 = char;
 using i16 = short;
 using i32 = int;
 using i64 = long long;

@@ -8,25 +8,16 @@
 #include "core/VulkanApp.h"
 #include "Ubo.h"
 #include "Texture.h"
+#include "math/Math.h"
 
 
 void rk::DescriptorSet::create() {
-    auto logicalDevice = VulkanApp::get()->getLogicalDevice();
+    auto logicalDevice = vulkanApp::getLogicalDevice();
 
     std::vector<VkDescriptorSetLayoutBinding> layoutsBinding;
-    layoutsBinding.reserve(m_samplerLayouts.size() + m_uboLayouts.size());
+    layoutsBinding.reserve(m_layouts.size());
     
-    for (const auto& layoutInfo : m_uboLayouts) {
-        VkDescriptorSetLayoutBinding layoutBinding{};
-        layoutBinding.binding = layoutInfo.binding;
-        layoutBinding.descriptorCount = 1;
-        layoutBinding.descriptorType = (VkDescriptorType)layoutInfo.type;
-        layoutBinding.stageFlags = (u32)layoutInfo.shaderStage;
-
-        layoutsBinding.push_back(layoutBinding);
-    }
-
-    for (const auto& layoutInfo : m_samplerLayouts) {
+    for (const auto& layoutInfo : m_layouts) {
         VkDescriptorSetLayoutBinding layoutBinding{};
         layoutBinding.binding = layoutInfo.binding;
         layoutBinding.descriptorCount = 1;
@@ -38,7 +29,7 @@ void rk::DescriptorSet::create() {
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = layoutsBinding.size();
+    layoutInfo.bindingCount = (u32)layoutsBinding.size();
     layoutInfo.pBindings = layoutsBinding.data();
 
     if (vkCreateDescriptorSetLayout(logicalDevice, &layoutInfo, nullptr, &m_descriptorSetLayout) != VK_SUCCESS)
@@ -51,7 +42,7 @@ void rk::DescriptorSet::create() {
 
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = VulkanApp::get()->getDescriptorPool();
+    allocInfo.descriptorPool = vulkanApp::getDescriptorPool();
     allocInfo.descriptorSetCount = utl::FRAMES_COUNT;
     allocInfo.pSetLayouts = layouts;
 
@@ -64,47 +55,51 @@ void rk::DescriptorSet::create() {
     std::vector<std::unique_ptr<VkDescriptorImageInfo>> imagesInfo;
 
     for (int i = 0; i < utl::FRAMES_COUNT; i++) {
-        // ubo writes
-        for (const auto& info : m_uboLayouts) {
-            // create in heap because it is passed by reference
-            auto bufferInfo = std::make_unique<VkDescriptorBufferInfo>();
-            bufferInfo->buffer = info.ubo->getBuffer(i);
-            bufferInfo->offset = 0;
-            bufferInfo->range = info.ubo->getSize();
-
+        for (const auto& info : m_layouts) {
             VkWriteDescriptorSet writer{};
             writer.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             writer.dstSet = m_descriptorSets[i];
             writer.dstBinding = info.binding;
-            writer.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            writer.descriptorType = (VkDescriptorType)info.type;
             writer.descriptorCount = 1;
-            writer.pBufferInfo = bufferInfo.get();
+
+            if (info.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER || info.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
+                // create in heap because it is passed by reference
+                auto bufferInfo = std::make_unique<VkDescriptorBufferInfo>();
+                bufferInfo->offset = 0;
+
+                Ubo* buffer = nullptr;
+                
+                if (info.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+                    buffer = &m_ubos[info.uboIndex];
+                else
+                    buffer = &m_dynamicUbos[info.uboIndex];
+
+                bufferInfo->buffer = buffer->getBuffer(i);
+                bufferInfo->range = buffer->getSize();
+
+                writer.pBufferInfo = bufferInfo.get();
+
+                buffersInfo.push_back(std::move(bufferInfo));
+            }
+
+            if (info.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+                // create in heap because it is passed by reference
+                auto imageInfo = std::make_unique<VkDescriptorImageInfo>();
+                imageInfo->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                imageInfo->imageView = info.texture->getImageView();
+                imageInfo->sampler = info.texture->getSampler();
+
+                writer.pImageInfo = imageInfo.get();
+
+                imagesInfo.push_back(std::move(imageInfo));
+            }
 
             descriptorWrites.push_back(writer);
-            buffersInfo.push_back(std::move(bufferInfo));
+
         }
-        
-        // sampler writes
-        for (const auto& info : m_samplerLayouts) {
-            // create in heap because it is passed by reference
-            auto imageInfo = std::make_unique<VkDescriptorImageInfo>();
-            imageInfo->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo->imageView = info.texture->getImageView();
-            imageInfo->sampler = info.texture->getSampler();
-
-            VkWriteDescriptorSet writer{};
-            writer.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            writer.dstSet = m_descriptorSets[i];
-            writer.dstBinding = info.binding;
-            writer.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            writer.descriptorCount = 1;
-            writer.pImageInfo = imageInfo.get();
-
-            descriptorWrites.push_back(writer);
-            imagesInfo.push_back(std::move(imageInfo));
-        }
-
-        vkUpdateDescriptorSets(logicalDevice, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+  
+        vkUpdateDescriptorSets(logicalDevice, (u32)descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 
         // clean for the next loop iteration
         descriptorWrites.clear();
@@ -113,27 +108,87 @@ void rk::DescriptorSet::create() {
     }
 }
 
-void rk::DescriptorSet::addSampler(const Texture& texture, u32 binding, ShaderStage stage) {
-    SamplerInfo layout{};
-    layout.texture = &texture;
+void rk::DescriptorSet::bind(VkCommandBuffer command, VkPipelineLayout pipelineLayout) {
+    vkCmdBindDescriptorSets(command, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
+        &m_descriptorSets[vulkanApp::getCurrentFrame()], (u32)m_offsets.size(), m_offsetsMask.data());
+
+    // reset offsets mask
+    for (auto i = 0; i < m_offsetsMask.size(); i++)
+        m_offsetsMask[i] = 0;
+}
+
+void rk::DescriptorSet::addSampler(const Texture* texture, u32 binding, ShaderStage stage) {
+    LayoutInfo layout{};
+    layout.texture = texture;
     layout.binding = binding;
     layout.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     layout.shaderStage = stage;
 
-    m_samplerLayouts.push_back(layout);
+    m_layouts.push_back(layout);
 }
 
-void rk::DescriptorSet::addUbo(const Ubo& ubo, u32 binding, ShaderStage stage) {
-    UboInfo layout{};
-    layout.ubo = &ubo;
+i32 rk::DescriptorSet::addUbo(u64 size, u32 binding, ShaderStage stage) {
+    i32 index = m_ubos.size();
+
+    LayoutInfo layout{};
+    layout.uboIndex = index;
     layout.binding = binding;
     layout.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     layout.shaderStage = stage;
 
-    m_uboLayouts.push_back(layout);
+    m_layouts.push_back(layout);
+
+    rk::Ubo ubo;
+    ubo.create(size);
+
+    m_ubos.push_back(ubo);
+
+    return index;
 }
 
-void rk::DescriptorSet::bind(VkCommandBuffer command, VkPipelineLayout pipelineLayout) const {
-    vkCmdBindDescriptorSets(command, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
-        &m_descriptorSets[VulkanApp::currentFrame()], 0, nullptr);
+i32 rk::DescriptorSet::addDynamicUbo() {
+    m_dynamicUboOffset = 0;
+    m_dynamicUboIndex = m_dynamicUbos.size();
+
+    m_offsets.push_back({});
+    m_offsetsMask.push_back(0);
+
+    return m_dynamicUboIndex;
+}
+
+u32 rk::DescriptorSet::addDynamicUboOffset(u64 size) {
+    u32 offset = m_dynamicUboOffset;
+
+    const auto alignedSize = vulkanApp::getProperties().limits.minUniformBufferOffsetAlignment;
+    //m_dynamicUboOffset += math::alignUp(size, d);
+    m_dynamicUboOffset += (size + alignedSize - 1) & ~(alignedSize - 1);
+
+    m_offsets[m_dynamicUboIndex].push_back(offset);
+
+    return offset;
+}
+
+void rk::DescriptorSet::updateDynamicUbo(i32 dynamicUboIndex, i32 dynamicUboOffsetIndex, u32 additionalOffset, u64 size, const void* data) {
+    u32 offset = m_offsets[dynamicUboIndex][dynamicUboOffsetIndex];
+
+    assert(math::isAligned(offset, (u32)vulkanApp::getProperties().limits.minUniformBufferOffsetAlignment));
+
+    m_dynamicUbos[dynamicUboIndex].update(offset + additionalOffset, size, data);
+}
+
+void rk::DescriptorSet::createDynamicUbo(u32 binding, ShaderStage stage) {
+    i32 index = m_dynamicUbos.size();
+
+    LayoutInfo layout{};
+    layout.uboIndex = index;
+    layout.binding = binding;
+    layout.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    layout.shaderStage = stage;
+
+    m_layouts.push_back(layout);
+
+    rk::Ubo ubo;
+    ubo.create(m_dynamicUboOffset);
+
+    m_dynamicUbos.push_back(ubo);
 }

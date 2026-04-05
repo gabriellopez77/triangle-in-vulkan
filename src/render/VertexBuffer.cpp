@@ -8,9 +8,8 @@
 
 void createSendBuffer(u64 size, const void* data, VkBuffer& buffer, VkDeviceMemory& memory, rk::BufferUsage usage);
 
-void rk::VertexBuffer::create(u64 verticesSize,
-    const void* verticesData, u64 indicesSize,
-    const u32* indicesData) {
+void rk::VertexBuffer::create(u64 verticesSize, const void* verticesData,
+    u64 indicesSize, const u32* indicesData) {
     createSendBuffer(verticesSize, verticesData, m_buffer, m_memory, BufferUsage::VERTEX_BUFFER);
     createSendBuffer(indicesSize, indicesData, m_indexBuffer, m_indexMemory, BufferUsage::INDEX_BUFFER);
 }
@@ -37,7 +36,7 @@ void rk::VertexBuffer::bind(VkCommandBuffer command, u32 binding) const {
 }
 
 void createSendBuffer(u64 size, const void* data, VkBuffer& buffer, VkDeviceMemory& memory, rk::BufferUsage usage) {
-    auto logicalDevice = rk::VulkanApp::get()->getLogicalDevice();
+    auto logicalDevice = rk::vulkanApp::getLogicalDevice();
 
     // create staging buffer
     VkBuffer stagingBuffer;
